@@ -5,6 +5,8 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 
 def load_raw_data(path: str) -> pd.DataFrame:
@@ -122,14 +124,78 @@ def process_and_save_data(raw_path: str, output_path: str) -> pd.DataFrame:
     """
     df = load_raw_data(raw_path)
     customer_df = build_customer_features(df)
-    customer_df.to_csv(output_path, index=False)
-    return customer_df
+    
+    final_df = integrate_target_variable(customer_df, df)
+    
+    final_df.to_csv(output_path, index=False)
+    return final_df
+
+# ----------------------
+# Task 4: Proxy Target Variable
+# ----------------------
+
+def calculate_rfm(df, snapshot_date=None):
+    """Calculate Recency, Frequency, Monetary (RFM) metrics per customer"""
+    df = df.copy()
+    if snapshot_date is None:
+        snapshot_date = df['TransactionStartTime'].max() + pd.Timedelta(days=1)
+    else:
+        snapshot_date = pd.to_datetime(snapshot_date)
+
+    rfm_df = df.groupby('CustomerId').agg(
+        recency=('TransactionStartTime', lambda x: (snapshot_date - x.max()).days),
+        frequency=('TransactionId', 'count'),
+        monetary=('Amount', 'sum')
+    ).reset_index()
+
+    return rfm_df
+
+def scale_rfm(rfm_df):
+    """Standardize RFM metrics for clustering"""
+    scaler = StandardScaler()
+    rfm_scaled = rfm_df.copy()
+    rfm_scaled[['recency', 'frequency', 'monetary']] = scaler.fit_transform(
+        rfm_scaled[['recency', 'frequency', 'monetary']]
+    )
+    return rfm_scaled
+
+def cluster_customers(rfm_scaled, n_clusters=3, random_state=42):
+    """Cluster customers using KMeans"""
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
+    rfm_scaled['cluster'] = kmeans.fit_predict(rfm_scaled[['recency', 'frequency', 'monetary']])
+    return rfm_scaled
+
+def assign_high_risk_label(rfm_clustered):
+    """Label high-risk cluster as 1, others as 0"""
+    cluster_stats = rfm_clustered.groupby('cluster').agg(
+        recency=('recency', 'mean'),
+        frequency=('frequency', 'mean'),
+        monetary=('monetary', 'mean')
+    ).reset_index()
+
+    # Heuristic: high recency & low frequency & low monetary -> high risk
+    cluster_stats['risk_score'] = cluster_stats['recency'] - cluster_stats['frequency'] - cluster_stats['monetary']
+    high_risk_cluster = cluster_stats.sort_values('risk_score', ascending=False).iloc[0]['cluster']
+
+    rfm_clustered['is_high_risk'] = (rfm_clustered['cluster'] == high_risk_cluster).astype(int)
+    return rfm_clustered[['CustomerId', 'is_high_risk']]
+
+def integrate_target_variable(customer_df, transaction_df):
+    """Add the is_high_risk column to the customer-level dataframe"""
+    rfm_df = calculate_rfm(transaction_df)
+    rfm_scaled = scale_rfm(rfm_df)
+    rfm_clustered = cluster_customers(rfm_scaled)
+    target_df = assign_high_risk_label(rfm_clustered)
+
+    final_df = customer_df.merge(target_df, on='CustomerId', how='left')
+    return final_df
+
 
 
 
 if __name__ == "__main__":
-    RAW_DATA_PATH = "../data/raw/data.csv"
-    PROCESSED_DATA_PATH = "../data/processed/customer_features.csv"
+    RAW_DATA_PATH = "./data/raw/data.csv"
+    PROCESSED_DATA_PATH = "./data/processed/customer_features.csv"
 
     print("Starting data processing...")
     process_and_save_data(RAW_DATA_PATH, PROCESSED_DATA_PATH)
