@@ -14,3 +14,18 @@ Trade-offs Between Interpretable and Complex Models
 In a regulated financial environment, there is a fundamental trade-off between model interpretability and predictive performance. Simple models, such as Logistic Regression combined with Weight of Evidence (WoE), offer high interpretability, stability, and ease of explanation. These models are easier to validate, audit, and communicate to regulators, making them well-suited for compliance-driven use cases.
 
 On the other hand, complex models, such as Gradient Boosting or Random Forests, often deliver superior predictive performance by capturing non-linear relationships and feature interactions. However, they are less transparent, harder to explain, and more challenging to govern in a regulatory setting. In this project, we explore both approaches to balance performance and interpretability, ensuring that the final model achieves strong predictive power while remaining suitable for deployment in a regulated financial institution.
+
+
+TASK-2 INSIGHTS 
+
+Key Insights from Exploratory Data Analysis
+
+The dataset contains 95,662 transaction records with no missing values, indicating strong data completeness. However, TransactionStartTime requires conversion to datetime format for temporal analysis.
+
+All transactions originate from a single country (CountryCode = 256) and use a single currency (UGX), making these features non-informative for modeling and suitable for removal during feature engineering.
+
+Transaction amounts exhibit extreme right skew with significant outliers and include negative values representing refunds or reversals. This suggests the need for aggregation, scaling, and careful treatment of monetary features.
+
+The fraud label is highly imbalanced (≈0.2% positive cases) and is not appropriate as a proxy for credit default, reinforcing the need for an alternative risk proxy.
+
+The Value feature is highly correlated with Amount and largely redundant, indicating that retaining only one of these features will reduce multicollinearity.

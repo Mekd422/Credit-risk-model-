@@ -1,0 +1,6 @@
+# Core Libraries (Data Processing, EDA, Feature Engineering)
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
