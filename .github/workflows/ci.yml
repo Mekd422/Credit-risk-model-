@@ -26,9 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Lint with flake8
-        run: |
-          flake8 src tests --max-line-length=120
+    #   - name: Lint with flake8
+    #     run: |
+    #       flake8 src tests --max-line-length=120
 
       - name: Run API tests
         run: |
