@@ -4,5 +4,6 @@ numpy
 scikit-learn
 matplotlib
 seaborn
+mlflow
 flake8==6.1.0
 pytest==7.4.4
