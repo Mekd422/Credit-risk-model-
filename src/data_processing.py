@@ -85,38 +85,32 @@ def build_customer_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_preprocessing_pipeline(df: pd.DataFrame):
-    """
-    Build sklearn preprocessing pipeline for numerical and categorical features.
-    """
     numeric_features = df.select_dtypes(include=["int64", "float64"]).columns.tolist()
-    numeric_features.remove("CustomerId")
+    if "CustomerId" in numeric_features:
+        numeric_features.remove("CustomerId")
 
     categorical_features = df.select_dtypes(include=["object"]).columns.tolist()
-    categorical_features.remove("CustomerId")
+    if "CustomerId" in categorical_features:
+        categorical_features.remove("CustomerId")
 
-    numeric_pipeline = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="median")),
-            ("scaler", StandardScaler()),
-        ]
-    )
+    numeric_pipeline = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="median")),
+        ("scaler", StandardScaler())
+    ])
 
-    categorical_pipeline = Pipeline(
-        steps=[
-            ("imputer", SimpleImputer(strategy="most_frequent")),
-            ("encoder", OneHotEncoder(handle_unknown="ignore", sparse=False)),
-        ]
-    )
+    categorical_pipeline = Pipeline(steps=[
+        ("imputer", SimpleImputer(strategy="most_frequent")),
+        ("encoder", OneHotEncoder(handle_unknown="ignore", sparse_output=False))
+    ])
 
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", numeric_pipeline, numeric_features),
-            ("cat", categorical_pipeline, categorical_features),
+            ("cat", categorical_pipeline, categorical_features)
         ]
     )
 
     return preprocessor, numeric_features, categorical_features
-
 
 def process_and_save_data(raw_path: str, output_path: str) -> pd.DataFrame:
     """
