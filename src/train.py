@@ -49,7 +49,11 @@ def train_models(X_train, y_train, preprocessor):
 
         # MLflow logging
         with mlflow.start_run(run_name=name):
-            mlflow.sklearn.log_model(grid.best_estimator_, "model")
+            mlflow.sklearn.log_model(
+            grid.best_estimator_,
+            "model",
+            registered_model_name="credit-risk-model"
+        ) 
             y_pred = grid.predict(X_train)
             mlflow.log_metric("accuracy", accuracy_score(y_train, y_pred))
             mlflow.log_metric("precision", precision_score(y_train, y_pred))
