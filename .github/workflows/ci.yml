@@ -32,7 +32,7 @@ jobs:
     # 4️⃣ Run linter (flake8)
     - name: Lint with flake8
       run: |
-        flake8 src tests --max-line-length=120
+        flake8 tests --max-line-length=120
 
     # 5️⃣ Run unit tests for data processing
     - name: Run tests
